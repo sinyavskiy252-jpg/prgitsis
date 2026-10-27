@@ -1,0 +1,73 @@
+
+import aiohttp
+import asyncio
+import json
+from datetime import datetime
+
+
+API_1 = "https://vpic.nhtsa.dot.gov/api/vehicles/GetAllMakes?format=json"
+API_2 = "https://vpic.nhtsa.dot.gov/api/vehicles/GetMakesForVehicleType/car?format=json"
+
+semaphore = asyncio.Semaphore(3)
+
+
+async def get_data(url, session):
+    async with semaphore:
+        try:
+            async with session.get(url, timeout=5) as response:
+                if response.status != 200:
+                    print(f"ошибка HTTP: {response.status}")
+                    return None
+
+                return await response.json()
+
+        except asyncio.TimeoutError:
+            print("запрос превысил 5 секунд")
+        except aiohttp.ClientError as error:
+            print(f"ошибка подключения: {error}")
+        except json.JSONDecodeError:
+            print("ошибка JSON")
+
+        return None
+
+
+def save_data(data):
+    try:
+        with open("data.json", "r", encoding="utf-8") as file:
+            old_data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        old_data = []
+
+    old_data.append(data)
+
+    with open("data.json", "w", encoding="utf-8") as file:
+        json.dump(old_data, file, ensure_ascii=False, indent=4)
+
+
+async def main():
+    async with aiohttp.ClientSession() as session:
+
+        while True:
+            print("\nполучение данных...")
+
+            result_1, result_2 = await asyncio.gather(
+                get_data(API_1, session),
+                get_data(API_2, session)
+            )
+
+            data = {
+                "timestamp": str(datetime.now()),
+                "api_1": result_1,
+                "api_2": result_2
+            }
+
+            save_data(data)
+
+            print(json.dumps(data, ensure_ascii=False, indent=4))
+            print("\nследующий запрос через 10 минут!!! вот блин чеж делать")
+
+            await asyncio.sleep(600)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
