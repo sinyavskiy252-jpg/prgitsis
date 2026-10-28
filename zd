@@ -1,4 +1,4 @@
-# Тестирование веток и Pull Request в Git
+# Тестирование веток Git312
 
 import aiohttp
 import asyncio
@@ -65,10 +65,10 @@ async def main():
             save_data(data)
 
             print(json.dumps(data, ensure_ascii=False, indent=4))
-            print("\nследующий запрос через 10 минут!!! вот блин чеж делать")
+            print("\nследующий запрос через 10 минут, вот такая фигня собачка")
 
             await asyncio.sleep(600)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main()) 
